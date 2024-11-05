@@ -6,3 +6,4 @@ button.addEventListener("click", () => {
 button.textContent = "Click me";
 
 document.body.appendChild(button);
+console.log("hello world");
