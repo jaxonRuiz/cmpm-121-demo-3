@@ -43,11 +43,6 @@ interface Cell {
   j: number;
 }
 
-interface Cache {
-  coins: number;
-  cell: Cell;
-}
-
 // Add a marker to represent the player
 const playerMarker = leaflet.marker(OAKES_CLASSROOM);
 playerMarker.bindTooltip("That's you!");
@@ -77,13 +72,12 @@ function spawnCache(cell: Cell) {
       luck([cell.i, cell.j, "initialValue"].toString()) * 100,
     );
 
-    // The popup offers a description and button
+    // The popup offers a description buttons to collect and deposit coins
     const popupDiv = document.createElement("div");
     popupDiv.innerHTML = `
                 <div>There is a cache here at "${cell.i},${cell.j}". It has value <span id="value">${pointValue}</span>.</div>
                 <button id="collect">collect</button> <button id="deposit">deposit</button>`;
 
-    // Clicking the button decrements the cache's value and increments the player's points
     // collect button functionality
     popupDiv
       .querySelector<HTMLButtonElement>("#collect")!
