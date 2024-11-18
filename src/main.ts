@@ -16,7 +16,6 @@ import { Board } from "./board.ts";
 
 // Location of our classroom (as identified on Google Maps)
 const OAKES_CLASSROOM = leaflet.latLng(36.98949379578401, -122.06277128548504);
-const NULL_ISLAND = leaflet.latLng(0, 0);
 
 // Tunable gameplay parameters
 const GAMEPLAY_ZOOM_LEVEL = 19;
@@ -47,6 +46,15 @@ interface Cell {
   readonly j: number;
 }
 
+interface Cache {
+  location: Cell;
+  coins: Coin[];
+}
+
+interface Coin {
+  key: string;
+}
+
 const board = new Board(TILE_DEGREES, NEIGHBORHOOD_SIZE);
 // const originCell = board.getCellForPoint(OAKES_CLASSROOM);
 const surroundingCells = board.getCellsNearPoint(OAKES_CLASSROOM);
@@ -63,15 +71,14 @@ statusPanel.innerHTML = "No points yet...";
 
 // Add caches to the map by cell numbers
 function spawnCache(cell: Cell) {
-  // Convert cell numbers into lat/lng bounds
-  const origin = NULL_ISLAND;
-
   // Add a rectangle to the map to represent the cache
   const rect = leaflet.circle([
-    origin.lat + cell.i * TILE_DEGREES,
-    origin.lng + cell.j * TILE_DEGREES,
+    cell.i * TILE_DEGREES,
+    cell.j * TILE_DEGREES,
   ], { radius: 5 });
   rect.addTo(map);
+
+  const coins: Coin[] = [];
 
   // Handle interactions with the cache
   rect.bindPopup(() => {
@@ -79,7 +86,10 @@ function spawnCache(cell: Cell) {
     let pointValue = Math.floor(
       luck([cell.i, cell.j, "initialValue"].toString()) * 100,
     );
-
+    for (let i = 0; i < pointValue; i++) {
+      coins.push({ key: `i:${cell.i}j:${cell.j}$${i}` });
+    }
+    console.log(coins);
     // The popup offers a description buttons to collect and deposit coins
     const popupDiv = document.createElement("div");
     popupDiv.innerHTML = `
@@ -115,7 +125,6 @@ function spawnCache(cell: Cell) {
 
 // populate neighborhood with caches
 surroundingCells.forEach(({ i, j }) => {
-  console.log("Checking cell", i, j);
   // If location i,j is lucky enough, spawn a cache!
   if (luck([i, j].toString()) < CACHE_SPAWN_PROBABILITY) {
     spawnCache({ i, j });
