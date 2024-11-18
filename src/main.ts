@@ -106,9 +106,7 @@ function spawnCache(cell: Cell) {
           return;
         }
         playerCoins.push(coins.pop()!);
-        popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML = coins
-          .length.toString();
-        statusPanel.innerHTML = `${playerCoins.length} points accumulated`;
+        updatePlayerInventory();
         updateCoinsUI();
       });
 
@@ -120,9 +118,7 @@ function spawnCache(cell: Cell) {
           return;
         }
         coins.push(playerCoins.pop()!);
-        popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML = coins
-          .length.toString();
-        statusPanel.innerHTML = `${playerCoins.length} points accumulated`;
+        updatePlayerInventory();
         updateCoinsUI();
       },
     );
@@ -130,7 +126,8 @@ function spawnCache(cell: Cell) {
     return popupDiv;
 
     function updateCoinsUI() {
-      statusPanel.innerHTML = `${playerCoins.length} points accumulated`;
+      popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML = coins
+        .length.toString();
       let out = "";
       const printedCoins = coins.length > 5 ? 5 : coins.length;
       for (let i = coins.length - 1; i > coins.length - printedCoins; i--) {
@@ -149,3 +146,7 @@ surroundingCells.forEach(({ i, j }) => {
     spawnCache({ i, j });
   }
 });
+
+function updatePlayerInventory() {
+  statusPanel.innerHTML = `${playerCoins.length} points accumulated`;
+}
