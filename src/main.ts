@@ -94,6 +94,9 @@ function spawnCache(cell: Cell) {
     popupDiv.innerHTML = `
                 <div>There is a cache here at "${cell.i},${cell.j}". It has value <span id="value">${coins.length}</span>.</div>
                 <button id="collect">collect</button> <button id="deposit">deposit</button>`;
+    const coinsDiv = document.createElement("div");
+    popupDiv.appendChild(coinsDiv);
+    updateCoinsUI();
 
     // collect button functionality
     popupDiv
@@ -106,6 +109,7 @@ function spawnCache(cell: Cell) {
         popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML = coins
           .length.toString();
         statusPanel.innerHTML = `${playerCoins.length} points accumulated`;
+        updateCoinsUI();
       });
 
     // deposit button functionality
@@ -119,10 +123,22 @@ function spawnCache(cell: Cell) {
         popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML = coins
           .length.toString();
         statusPanel.innerHTML = `${playerCoins.length} points accumulated`;
+        updateCoinsUI();
       },
     );
 
     return popupDiv;
+
+    function updateCoinsUI() {
+      statusPanel.innerHTML = `${playerCoins.length} points accumulated`;
+      let out = "";
+      const printedCoins = coins.length > 5 ? 5 : coins.length;
+      for (let i = coins.length - 1; i > coins.length - printedCoins; i--) {
+        out += coins[i].key;
+        out += "<br>";
+      }
+      coinsDiv.innerHTML = out;
+    }
   });
 }
 
