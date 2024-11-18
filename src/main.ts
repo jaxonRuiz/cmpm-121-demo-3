@@ -65,7 +65,7 @@ playerMarker.bindTooltip("That's you!");
 playerMarker.addTo(map);
 
 // Display the player's points
-let playerPoints = 0;
+const playerCoins: Coin[] = [];
 const statusPanel = document.querySelector<HTMLDivElement>("#statusPanel")!; // element `statusPanel` is defined in index.html
 statusPanel.innerHTML = "No points yet...";
 
@@ -79,43 +79,46 @@ function spawnCache(cell: Cell) {
   rect.addTo(map);
 
   const coins: Coin[] = [];
-
+  for (
+    let i = 0;
+    i < luck([cell.i, cell.j, "initialValue"].toString()) * 100;
+    i++
+  ) {
+    coins.push({ key: `i:${cell.i}j:${cell.j}$${i}` });
+  }
   // Handle interactions with the cache
   rect.bindPopup(() => {
-    // Each cache has a random point value, mutable by the player
-    let pointValue = Math.floor(
-      luck([cell.i, cell.j, "initialValue"].toString()) * 100,
-    );
-    for (let i = 0; i < pointValue; i++) {
-      coins.push({ key: `i:${cell.i}j:${cell.j}$${i}` });
-    }
     console.log(coins);
     // The popup offers a description buttons to collect and deposit coins
     const popupDiv = document.createElement("div");
     popupDiv.innerHTML = `
-                <div>There is a cache here at "${cell.i},${cell.j}". It has value <span id="value">${pointValue}</span>.</div>
+                <div>There is a cache here at "${cell.i},${cell.j}". It has value <span id="value">${coins.length}</span>.</div>
                 <button id="collect">collect</button> <button id="deposit">deposit</button>`;
 
     // collect button functionality
     popupDiv
       .querySelector<HTMLButtonElement>("#collect")!
       .addEventListener("click", () => {
-        pointValue--;
-        popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML =
-          pointValue.toString();
-        playerPoints++;
-        statusPanel.innerHTML = `${playerPoints} points accumulated`;
+        if (coins.length === 0) {
+          return;
+        }
+        playerCoins.push(coins.pop()!);
+        popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML = coins
+          .length.toString();
+        statusPanel.innerHTML = `${playerCoins.length} points accumulated`;
       });
 
     // deposit button functionality
     popupDiv.querySelector<HTMLButtonElement>("#deposit")!.addEventListener(
       "click",
       () => {
-        pointValue++;
-        popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML =
-          pointValue.toString();
-        playerPoints--;
-        statusPanel.innerHTML = `${playerPoints} points accumulated`;
+        if (playerCoins.length === 0) {
+          return;
+        }
+        coins.push(playerCoins.pop()!);
+        popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML = coins
+          .length.toString();
+        statusPanel.innerHTML = `${playerCoins.length} points accumulated`;
       },
     );
 
