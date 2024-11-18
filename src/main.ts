@@ -11,8 +11,12 @@ import "./leafletWorkaround.ts";
 // Deterministic random number generator
 import luck from "./luck.ts";
 
+// import board
+import { Board } from "./board.ts";
+
 // Location of our classroom (as identified on Google Maps)
 const OAKES_CLASSROOM = leaflet.latLng(36.98949379578401, -122.06277128548504);
+const NULL_ISLAND = leaflet.latLng(0, 0);
 
 // Tunable gameplay parameters
 const GAMEPLAY_ZOOM_LEVEL = 19;
@@ -39,9 +43,13 @@ leaflet
   .addTo(map);
 
 interface Cell {
-  i: number;
-  j: number;
+  readonly i: number;
+  readonly j: number;
 }
+
+const board = new Board(TILE_DEGREES, NEIGHBORHOOD_SIZE);
+// const originCell = board.getCellForPoint(OAKES_CLASSROOM);
+const surroundingCells = board.getCellsNearPoint(OAKES_CLASSROOM);
 
 // Add a marker to represent the player
 const playerMarker = leaflet.marker(OAKES_CLASSROOM);
@@ -56,7 +64,7 @@ statusPanel.innerHTML = "No points yet...";
 // Add caches to the map by cell numbers
 function spawnCache(cell: Cell) {
   // Convert cell numbers into lat/lng bounds
-  const origin = OAKES_CLASSROOM;
+  const origin = NULL_ISLAND;
 
   // Add a rectangle to the map to represent the cache
   const rect = leaflet.circle([
@@ -106,11 +114,10 @@ function spawnCache(cell: Cell) {
 }
 
 // populate neighborhood with caches
-for (let i = -NEIGHBORHOOD_SIZE; i < NEIGHBORHOOD_SIZE; i++) {
-  for (let j = -NEIGHBORHOOD_SIZE; j < NEIGHBORHOOD_SIZE; j++) {
-    // If location i,j is lucky enough, spawn a cache!
-    if (luck([i, j].toString()) < CACHE_SPAWN_PROBABILITY) {
-      spawnCache({ i, j });
-    }
+surroundingCells.forEach(({ i, j }) => {
+  console.log("Checking cell", i, j);
+  // If location i,j is lucky enough, spawn a cache!
+  if (luck([i, j].toString()) < CACHE_SPAWN_PROBABILITY) {
+    spawnCache({ i, j });
   }
-}
+});
