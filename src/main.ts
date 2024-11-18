@@ -59,26 +59,28 @@ const statusPanel = document.querySelector<HTMLDivElement>("#statusPanel")!; // 
 statusPanel.innerHTML = "No points yet...";
 
 // Add caches to the map by cell numbers
-function spawnCache(i: number, j: number) {
+function spawnCache(cell: Cell) {
   // Convert cell numbers into lat/lng bounds
   const origin = OAKES_CLASSROOM;
 
   // Add a rectangle to the map to represent the cache
   const rect = leaflet.circle([
-    origin.lat + i * TILE_DEGREES,
-    origin.lng + j * TILE_DEGREES,
+    origin.lat + cell.i * TILE_DEGREES,
+    origin.lng + cell.j * TILE_DEGREES,
   ], { radius: 5 });
   rect.addTo(map);
 
   // Handle interactions with the cache
   rect.bindPopup(() => {
     // Each cache has a random point value, mutable by the player
-    let pointValue = Math.floor(luck([i, j, "initialValue"].toString()) * 100);
+    let pointValue = Math.floor(
+      luck([cell.i, cell.j, "initialValue"].toString()) * 100,
+    );
 
     // The popup offers a description and button
     const popupDiv = document.createElement("div");
     popupDiv.innerHTML = `
-                <div>There is a cache here at "${i},${j}". It has value <span id="value">${pointValue}</span>.</div>
+                <div>There is a cache here at "${cell.i},${cell.j}". It has value <span id="value">${pointValue}</span>.</div>
                 <button id="collect">collect</button> <button id="deposit">deposit</button>`;
 
     // Clicking the button decrements the cache's value and increments the player's points
@@ -114,7 +116,7 @@ for (let i = -NEIGHBORHOOD_SIZE; i < NEIGHBORHOOD_SIZE; i++) {
   for (let j = -NEIGHBORHOOD_SIZE; j < NEIGHBORHOOD_SIZE; j++) {
     // If location i,j is lucky enough, spawn a cache!
     if (luck([i, j].toString()) < CACHE_SPAWN_PROBABILITY) {
-      spawnCache(i, j);
+      spawnCache({ i, j });
     }
   }
 }
