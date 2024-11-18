@@ -62,13 +62,12 @@ statusPanel.innerHTML = "No points yet...";
 function spawnCache(i: number, j: number) {
   // Convert cell numbers into lat/lng bounds
   const origin = OAKES_CLASSROOM;
-  const bounds = leaflet.latLngBounds([
-    [origin.lat + i * TILE_DEGREES, origin.lng + j * TILE_DEGREES],
-    [origin.lat + (i + 1) * TILE_DEGREES, origin.lng + (j + 1) * TILE_DEGREES],
-  ]);
 
   // Add a rectangle to the map to represent the cache
-  const rect = leaflet.rectangle(bounds);
+  const rect = leaflet.circle([
+    origin.lat + i * TILE_DEGREES,
+    origin.lng + j * TILE_DEGREES,
+  ], { radius: 5 });
   rect.addTo(map);
 
   // Handle interactions with the cache
@@ -80,11 +79,12 @@ function spawnCache(i: number, j: number) {
     const popupDiv = document.createElement("div");
     popupDiv.innerHTML = `
                 <div>There is a cache here at "${i},${j}". It has value <span id="value">${pointValue}</span>.</div>
-                <button id="poke">poke</button>`;
+                <button id="collect">collect</button> <button id="deposit">deposit</button>`;
 
     // Clicking the button decrements the cache's value and increments the player's points
+    // collect button functionality
     popupDiv
-      .querySelector<HTMLButtonElement>("#poke")!
+      .querySelector<HTMLButtonElement>("#collect")!
       .addEventListener("click", () => {
         pointValue--;
         popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML =
@@ -92,6 +92,18 @@ function spawnCache(i: number, j: number) {
         playerPoints++;
         statusPanel.innerHTML = `${playerPoints} points accumulated`;
       });
+
+    // deposit button functionality
+    popupDiv.querySelector<HTMLButtonElement>("#deposit")!.addEventListener(
+      "click",
+      () => {
+        pointValue++;
+        popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML =
+          pointValue.toString();
+        playerPoints--;
+        statusPanel.innerHTML = `${playerPoints} points accumulated`;
+      },
+    );
 
     return popupDiv;
   });
