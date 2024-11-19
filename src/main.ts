@@ -1,5 +1,5 @@
 // @deno-types="npm:@types/leaflet@^1.9.14"
-import leaflet from "leaflet";
+import leaflet, { Layer } from "leaflet";
 
 // Style sheets
 import "leaflet/dist/leaflet.css";
@@ -28,9 +28,11 @@ const map = leaflet.map(document.getElementById("map")!, {
   zoom: GAMEPLAY_ZOOM_LEVEL,
   minZoom: GAMEPLAY_ZOOM_LEVEL,
   maxZoom: GAMEPLAY_ZOOM_LEVEL,
-  zoomControl: true,
-  scrollWheelZoom: true,
+  zoomControl: false,
+  scrollWheelZoom: false,
 });
+const cacheLayer = leaflet.layerGroup();
+map.addLayer(cacheLayer);
 
 // Populate the map with a background tile layer
 leaflet
@@ -49,6 +51,7 @@ interface Cell {
 interface Cache {
   location: Cell;
   coins: Coin[];
+  indicator: Layer;
 }
 
 interface Coin {
@@ -57,10 +60,10 @@ interface Coin {
 
 const board = new Board(TILE_DEGREES, NEIGHBORHOOD_SIZE);
 // const originCell = board.getCellForPoint(OAKES_CLASSROOM);
-const surroundingCells = board.getCellsNearPoint(OAKES_CLASSROOM);
 
 // Add a marker to represent the player
 const playerMarker = leaflet.marker(OAKES_CLASSROOM);
+
 playerMarker.bindTooltip("That's you!");
 playerMarker.addTo(map);
 
@@ -70,13 +73,16 @@ const statusPanel = document.querySelector<HTMLDivElement>("#statusPanel")!; // 
 statusPanel.innerHTML = "No points yet...";
 
 // Add caches to the map by cell numbers
-function spawnCache(cell: Cell) {
+function spawnCache(cell: Cell): Cache {
   // Add a rectangle to the map to represent the cache
   const rect = leaflet.circle([
-    cell.i * TILE_DEGREES,
-    cell.j * TILE_DEGREES,
+    (0.25 + cell.i) * TILE_DEGREES,
+    (0.25 + cell.j) * TILE_DEGREES,
   ], { radius: 5 });
-  rect.addTo(map);
+  rect.addTo(cacheLayer);
+  rect.addEventListener("clear", () => {
+    rect.remove();
+  });
 
   const coins: Coin[] = [];
   for (
@@ -86,9 +92,9 @@ function spawnCache(cell: Cell) {
   ) {
     coins.push({ key: `i:${cell.i}j:${cell.j}$${i}` });
   }
+
   // Handle interactions with the cache
   rect.bindPopup(() => {
-    console.log(coins);
     // The popup offers a description buttons to collect and deposit coins
     const popupDiv = document.createElement("div");
     popupDiv.innerHTML = `
@@ -137,16 +143,75 @@ function spawnCache(cell: Cell) {
       coinsDiv.innerHTML = out;
     }
   });
+
+  return { location: cell, coins: coins, indicator: rect };
 }
 
 // populate neighborhood with caches
-surroundingCells.forEach(({ i, j }) => {
-  // If location i,j is lucky enough, spawn a cache!
-  if (luck([i, j].toString()) < CACHE_SPAWN_PROBABILITY) {
-    spawnCache({ i, j });
-  }
-});
+function generateSurroundingCaches() {
+  const surroundingCells = board.getCellsNearPoint(playerMarker.getLatLng());
+  cacheLayer.clearLayers();
+  surroundingCells.forEach(({ i, j }) => {
+    // If location i,j is lucky enough, spawn a cache!
+    if (luck([i, j].toString()) < CACHE_SPAWN_PROBABILITY) {
+      spawnCache({ i, j });
+    }
+  });
+}
+generateSurroundingCaches();
 
 function updatePlayerInventory() {
   statusPanel.innerHTML = `${playerCoins.length} points accumulated`;
+}
+
+document.getElementById("north")!.addEventListener("click", () => {
+  moveMarker("north");
+});
+
+document.getElementById("south")!.addEventListener("click", () => {
+  moveMarker("south");
+});
+
+document.getElementById("east")!.addEventListener("click", () => {
+  moveMarker("east");
+});
+
+document.getElementById("west")!.addEventListener("click", () => {
+  moveMarker("west");
+});
+
+document.getElementById("reset")!.addEventListener("click", () => {
+});
+
+function moveMarker(direction: string) {
+  const currentLoction = playerMarker.getLatLng();
+  switch (direction) {
+    case "north":
+      playerMarker.setLatLng([
+        currentLoction.lat + TILE_DEGREES,
+        currentLoction.lng,
+      ]);
+      break;
+    case "south":
+      playerMarker.setLatLng([
+        currentLoction.lat - TILE_DEGREES,
+        currentLoction.lng,
+      ]);
+      break;
+    case "east":
+      playerMarker.setLatLng([
+        currentLoction.lat,
+        currentLoction.lng + TILE_DEGREES,
+      ]);
+      break;
+    case "west":
+      playerMarker.setLatLng([
+        currentLoction.lat,
+        currentLoction.lng - TILE_DEGREES,
+      ]);
+      break;
+    default:
+      throw ("Invalid direction");
+  }
+  generateSurroundingCaches();
 }
