@@ -145,11 +145,16 @@ interface Coin {
 }
 
 const board = new Board(TILE_DEGREES, NEIGHBORHOOD_SIZE);
-// const originCell = board.getCellForPoint(OAKES_CLASSROOM);
+const bus = new EventTarget();
+bus.addEventListener("playerMoved", () => {
+  generateSurroundingCaches();
+});
+function notify(event: string) {
+  bus.dispatchEvent(new Event(event));
+}
 
 // Add a marker to represent the player
 const playerMarker = leaflet.marker(OAKES_CLASSROOM);
-
 playerMarker.bindTooltip("That's you!");
 playerMarker.addTo(map);
 
@@ -239,5 +244,5 @@ function moveMarker(direction: string) {
     default:
       throw ("Invalid direction");
   }
-  generateSurroundingCaches();
+  notify("playerMoved");
 }
