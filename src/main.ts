@@ -153,6 +153,11 @@ bus.addEventListener("playerMoved", () => {
   walkHistory.push(playerMarker.getLatLng());
   polyline.setLatLngs(walkHistory);
 });
+
+bus.addEventListener("dramaticMovement", () => {
+  map.setView(playerMarker.getLatLng(), GAMEPLAY_ZOOM_LEVEL);
+});
+
 function notify(event: string) {
   bus.dispatchEvent(new Event(event));
 }
@@ -227,6 +232,31 @@ document.getElementById("reset")!.addEventListener("click", () => {
   if (confirm!.toLowerCase() === "yes") resetCommand();
 });
 
+document.getElementById("sensor")!.addEventListener("click", () => {
+  // Check if geolocation is supported by the browser
+  if ("geolocation" in navigator) {
+    navigator.geolocation.getCurrentPosition(
+      // Success callback function
+      (position) => {
+        playerMarker.setLatLng([
+          position.coords.latitude,
+          position.coords.longitude,
+        ]);
+        notify("playerMoved");
+        notify("dramaticMovement");
+      },
+      // Error callback function
+      (error) => {
+        // Handle errors, e.g. user denied location sharing permissions
+        console.error("Error getting user location:", error);
+      },
+    );
+  } else {
+    // Geolocation is not supported by the browser
+    console.error("Geolocation is not supported by this browser.");
+  }
+});
+
 function resetCommand() {
   playerCoins.length = 0;
   updatePlayerInventory();
@@ -235,6 +265,7 @@ function resetCommand() {
   activeCaches.clear();
   walkHistory.length = 0;
   notify("playerMoved");
+  notify("dramaticMovement");
   localStorage.removeItem("state");
 }
 
@@ -302,6 +333,7 @@ function loadState() {
     activeCaches.set(key, newCache);
   });
   notify("playerMoved");
+  notify("dramaticMovement");
 }
 
 document.addEventListener("DOMContentLoaded", function () {
