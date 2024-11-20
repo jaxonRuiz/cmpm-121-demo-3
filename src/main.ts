@@ -212,6 +212,12 @@ document.getElementById("west")!.addEventListener("click", () => {
 });
 
 document.getElementById("reset")!.addEventListener("click", () => {
+  playerCoins.length = 0;
+  updatePlayerInventory();
+  playerMarker.setLatLng(OAKES_CLASSROOM);
+  savedCaches.clear();
+  activeCaches.clear();
+  notify("playerMoved");
 });
 
 function moveMarker(direction: string) {
