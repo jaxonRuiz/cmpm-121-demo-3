@@ -1,5 +1,5 @@
 // @deno-types="npm:@types/leaflet@^1.9.14"
-import leaflet from "leaflet";
+import leaflet, { LatLng } from "leaflet";
 
 // Style sheets
 import "leaflet/dist/leaflet.css";
@@ -33,6 +33,8 @@ const map = leaflet.map(document.getElementById("map")!, {
 });
 const cacheLayer = leaflet.layerGroup();
 map.addLayer(cacheLayer);
+const polylineLayer = leaflet.layerGroup();
+map.addLayer(polylineLayer);
 
 // Populate the map with a background tile layer
 leaflet
@@ -148,6 +150,8 @@ const board = new Board(TILE_DEGREES, NEIGHBORHOOD_SIZE);
 const bus = new EventTarget();
 bus.addEventListener("playerMoved", () => {
   generateSurroundingCaches();
+  walkHistory.push(playerMarker.getLatLng());
+  polyline.setLatLngs(walkHistory);
 });
 function notify(event: string) {
   bus.dispatchEvent(new Event(event));
@@ -157,6 +161,10 @@ function notify(event: string) {
 const playerMarker = leaflet.marker(OAKES_CLASSROOM);
 playerMarker.bindTooltip("That's you!");
 playerMarker.addTo(map);
+
+const walkHistory: LatLng[] = [playerMarker.getLatLng()];
+const polyline = leaflet.polyline(walkHistory, { color: "red" });
+polyline.addTo(polylineLayer);
 
 // Display the player's points
 const playerCoins: Coin[] = [];
@@ -225,6 +233,7 @@ function resetCommand() {
   playerMarker.setLatLng(OAKES_CLASSROOM);
   savedCaches.clear();
   activeCaches.clear();
+  walkHistory.length = 0;
   notify("playerMoved");
 }
 
