@@ -235,6 +235,7 @@ function resetCommand() {
   activeCaches.clear();
   walkHistory.length = 0;
   notify("playerMoved");
+  localStorage.removeItem("state");
 }
 
 function moveMarker(direction: string) {
@@ -269,3 +270,44 @@ function moveMarker(direction: string) {
   }
   notify("playerMoved");
 }
+
+function saveState() {
+  const state = {
+    playerCoins,
+    playerLocation: playerMarker.getLatLng(),
+    walkHistory,
+    savedCaches: Array.from(savedCaches.entries()),
+  };
+  localStorage.setItem("state", JSON.stringify(state));
+}
+
+function loadState() {
+  const state = JSON.parse(localStorage.getItem("state") || "{}");
+  if (state == "{}") return;
+
+  playerCoins.length = 0;
+  playerCoins.push(...state.playerCoins);
+  updatePlayerInventory();
+  playerMarker.setLatLng(state.playerLocation || OAKES_CLASSROOM);
+  walkHistory.length = 0;
+  walkHistory.push(...state.walkHistory);
+  polyline.setLatLngs(walkHistory);
+  savedCaches.clear();
+  state.savedCaches.forEach(([key, momento]: [string, string]) => {
+    const newCache = new Cache({
+      i: +key.split(",")[0],
+      j: +key.split(",")[1],
+    });
+    newCache.fromMomento(momento);
+    activeCaches.set(key, newCache);
+  });
+  notify("playerMoved");
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  loadState();
+});
+
+globalThis.addEventListener("beforeunload", function () {
+  saveState();
+});
