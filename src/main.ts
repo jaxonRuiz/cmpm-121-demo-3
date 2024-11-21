@@ -23,6 +23,8 @@ const TILE_DEGREES = 1e-4;
 const NEIGHBORHOOD_SIZE = 8;
 const CACHE_SPAWN_PROBABILITY = 0.1;
 
+// Create a game board and map
+const board = new Board(TILE_DEGREES, NEIGHBORHOOD_SIZE);
 const map = leaflet.map(document.getElementById("map")!, {
   center: OAKES_CLASSROOM,
   zoom: GAMEPLAY_ZOOM_LEVEL,
@@ -31,6 +33,8 @@ const map = leaflet.map(document.getElementById("map")!, {
   zoomControl: false,
   scrollWheelZoom: false,
 });
+
+// layer groups
 const cacheLayer = leaflet.layerGroup();
 map.addLayer(cacheLayer);
 const polylineLayer = leaflet.layerGroup();
@@ -44,9 +48,6 @@ leaflet
       '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   })
   .addTo(map);
-
-const savedCaches = new Map<string, string>();
-const activeCaches = new Map<string, Cache>();
 
 interface Cell {
   readonly i: number;
@@ -146,7 +147,6 @@ interface Coin {
   key: string;
 }
 
-const board = new Board(TILE_DEGREES, NEIGHBORHOOD_SIZE);
 const bus = new EventTarget();
 bus.addEventListener("playerMoved", () => {
   generateSurroundingCaches();
@@ -175,6 +175,10 @@ polyline.addTo(polylineLayer);
 const playerCoins: Coin[] = [];
 const statusPanel = document.querySelector<HTMLDivElement>("#statusPanel")!; // element `statusPanel` is defined in index.html
 statusPanel.innerHTML = "No points yet...";
+
+// setting up caches
+const savedCaches = new Map<string, string>();
+const activeCaches = new Map<string, Cache>();
 
 // populate neighborhood with caches
 function generateSurroundingCaches() {
