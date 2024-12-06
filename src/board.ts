@@ -43,7 +43,6 @@ export class Board {
   getCellsNearPoint(point: leaflet.LatLng): Cell[] {
     const resultCells: Cell[] = [];
     const originCell = this.getCellForPoint(point);
-    console.log(point);
     const TVR = this.tileVisibilityRadius;
     for (let i = -TVR; i < TVR; i++) {
       for (let j = -TVR; j < TVR; j++) {
