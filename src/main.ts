@@ -14,19 +14,22 @@ import luck from "./luck.ts";
 // import board
 import { Board } from "./board.ts";
 
-// Location of our classroom (as identified on Google Maps)
-const OAKES_CLASSROOM = leaflet.latLng(36.98949379578401, -122.06277128548504);
+// Tunable gameplay parameters //////////////////////////////////////////////
 
-// Tunable gameplay parameters
+// Location of our classroom (as identified on Google Maps)
+const STARTING_POINT = leaflet.latLng(36.98949379578401, -122.06277128548504);
+
 const GAMEPLAY_ZOOM_LEVEL = 19;
 const TILE_DEGREES = 1e-4;
 const NEIGHBORHOOD_SIZE = 8;
 const CACHE_SPAWN_PROBABILITY = 0.1;
 
+// Game Init ////////////////////////////////////////////////////////////////
+
 // Create a game board and map
 const board = new Board(TILE_DEGREES, NEIGHBORHOOD_SIZE);
 const map = leaflet.map(document.getElementById("map")!, {
-  center: OAKES_CLASSROOM,
+  center: STARTING_POINT,
   zoom: GAMEPLAY_ZOOM_LEVEL,
   minZoom: GAMEPLAY_ZOOM_LEVEL,
   maxZoom: GAMEPLAY_ZOOM_LEVEL,
@@ -49,6 +52,7 @@ leaflet
   })
   .addTo(map);
 
+// Cache Internals ////////////////////////////////////////////////////////////
 interface Cell {
   readonly i: number;
   readonly j: number;
@@ -148,23 +152,10 @@ interface Coin {
   key: string;
 }
 
-const bus = new EventTarget();
-bus.addEventListener("playerMoved", () => {
-  generateSurroundingCaches();
-  walkHistory.push(playerMarker.getLatLng());
-  polyline.setLatLngs(walkHistory);
-});
-
-bus.addEventListener("dramaticMovement", () => {
-  map.setView(playerMarker.getLatLng(), GAMEPLAY_ZOOM_LEVEL);
-});
-
-function notify(event: string) {
-  bus.dispatchEvent(new Event(event));
-}
+// visual interface /////////////////////////////////////////////////
 
 // Add a marker to represent the player
-const playerMarker = leaflet.marker(OAKES_CLASSROOM);
+const playerMarker = leaflet.marker(STARTING_POINT);
 playerMarker.bindTooltip("That's you!");
 playerMarker.addTo(map);
 
@@ -174,7 +165,7 @@ polyline.addTo(polylineLayer);
 
 // Display the player's points
 const playerCoins: Coin[] = [];
-const statusPanel = document.querySelector<HTMLDivElement>("#statusPanel")!; // element `statusPanel` is defined in index.html
+const statusPanel = document.querySelector<HTMLDivElement>("#statusPanel")!;
 statusPanel.innerHTML = "No points yet...";
 
 // setting up caches
@@ -184,18 +175,19 @@ const activeCaches = new Map<string, Cache>();
 // populate neighborhood with caches
 function generateSurroundingCaches() {
   const surroundingCells = board.getCellsNearPoint(playerMarker.getLatLng());
+
+  // save and clear caches
   saveActiveCaches();
   activeCaches.clear();
   cacheLayer.clearLayers();
-  surroundingCells.forEach(({ i, j }) => {
-    // If location i,j is lucky enough, spawn a cache!
-    if (luck([i, j].toString()) < CACHE_SPAWN_PROBABILITY) {
-      // spawnCache({ i, j });
 
+  // populate neighborhood with caches
+  surroundingCells.forEach(({ i, j }) => {
+    if (luck([i, j].toString()) < CACHE_SPAWN_PROBABILITY) {
       const key = [i, j].toString();
       if (savedCaches.has(key)) {
         console.log("from saved caches");
-        const newCache = new Cache({ i, j }); // add recycling of some kind
+        const newCache = new Cache({ i, j });
         newCache.fromMomento(savedCaches.get(key)!);
         activeCaches.set(key, newCache);
       } else {
@@ -214,6 +206,25 @@ function saveActiveCaches() {
     savedCaches.set(key, cache.toMomento());
   });
 }
+
+// Player Event handling /////////////////////////////////////////////////////////
+
+const bus = new EventTarget();
+bus.addEventListener("playerMoved", () => {
+  generateSurroundingCaches();
+  walkHistory.push(playerMarker.getLatLng());
+  polyline.setLatLngs(walkHistory);
+});
+
+bus.addEventListener("dramaticMovement", () => {
+  map.setView(playerMarker.getLatLng(), GAMEPLAY_ZOOM_LEVEL);
+});
+
+function notify(event: string) {
+  bus.dispatchEvent(new Event(event));
+}
+
+// player toolbar functions /////////////////////////////////////////////////
 
 function updatePlayerInventory() {
   statusPanel.innerHTML = `${playerCoins.length} points accumulated`;
@@ -278,7 +289,7 @@ function resetCommand() {
 function resetPlayer() {
   playerCoins.length = 0;
   updatePlayerInventory();
-  playerMarker.setLatLng(OAKES_CLASSROOM);
+  playerMarker.setLatLng(STARTING_POINT);
   walkHistory.length = 0;
   notify("playerMoved");
   notify("dramaticMovement");
@@ -317,6 +328,8 @@ function moveMarker(direction: string) {
   notify("playerMoved");
 }
 
+// Save and Load State /////////////////////////////////////////////////////////
+
 function saveState() {
   saveActiveCaches();
   const state = {
@@ -335,7 +348,7 @@ function loadState() {
   playerCoins.length = 0;
   playerCoins.push(...state.playerCoins);
   updatePlayerInventory();
-  playerMarker.setLatLng(state.playerLocation || OAKES_CLASSROOM);
+  playerMarker.setLatLng(state.playerLocation || STARTING_POINT);
   walkHistory.length = 0;
   walkHistory.push(...state.walkHistory);
   polyline.setLatLngs(walkHistory);
