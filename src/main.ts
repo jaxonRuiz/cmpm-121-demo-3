@@ -68,65 +68,7 @@ class Cache {
     ) {
       this.coins.push({ key: `i:${location.i}j:${location.j}$${i}` });
     }
-    this.addShape();
-  }
-  addShape() {
-    const shape = leaflet.circle([
-      (0.25 + this.location.i) * TILE_DEGREES,
-      (0.25 + this.location.j) * TILE_DEGREES,
-    ], { radius: 5 });
-    shape.addTo(cacheLayer);
-
-    // Handle interactions with the cache
-    shape.bindPopup(() => {
-      // The popup offers a description buttons to collect and deposit coins
-      const popupDiv = document.createElement("div");
-      popupDiv.innerHTML = `
-                  <div>There is a cache here at "${this.location.i},${this.location.j}". It has value <span id="value">${this.coins.length}</span>.</div>
-                  <button id="collect">collect</button> <button id="deposit">deposit</button>`;
-      const coinsDiv = document.createElement("div");
-      popupDiv.appendChild(coinsDiv);
-      updateCoinsUI(this.coins);
-
-      // collect button functionality
-      popupDiv
-        .querySelector<HTMLButtonElement>("#collect")!
-        .addEventListener("click", () => {
-          if (this.coins.length === 0) {
-            return;
-          }
-          playerCoins.push(this.coins.pop()!);
-          updatePlayerInventory();
-          updateCoinsUI(this.coins);
-        });
-
-      // deposit button functionality
-      popupDiv.querySelector<HTMLButtonElement>("#deposit")!.addEventListener(
-        "click",
-        () => {
-          if (playerCoins.length === 0) {
-            return;
-          }
-          this.coins.push(playerCoins.pop()!);
-          updatePlayerInventory();
-          updateCoinsUI(this.coins);
-        },
-      );
-
-      return popupDiv;
-
-      function updateCoinsUI(coins: Coin[]) {
-        popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML = coins
-          .length.toString();
-        let out = "";
-        const printedCoins = coins.length > 5 ? 5 : coins.length;
-        for (let i = coins.length - 1; i > coins.length - printedCoins; i--) {
-          out += coins[i].key;
-          out += "<br>";
-        }
-        coinsDiv.innerHTML = out;
-      }
-    });
+    addCacheUI(this);
   }
 
   toMomento() {
@@ -141,6 +83,65 @@ class Cache {
     this.location = obj.location;
     this.coins = obj.coins;
   }
+}
+
+function addCacheUI(cache: Cache) {
+  const shape = leaflet.circle([
+    (0.25 + cache.location.i) * TILE_DEGREES,
+    (0.25 + cache.location.j) * TILE_DEGREES,
+  ], { radius: 5 });
+  shape.addTo(cacheLayer);
+
+  // Handle interactions with the cache
+  shape.bindPopup(() => {
+    // The popup offers a description buttons to collect and deposit coins
+    const popupDiv = document.createElement("div");
+    popupDiv.innerHTML = `
+                <div>There is a cache here at "${cache.location.i},${cache.location.j}". It has value <span id="value">${cache.coins.length}</span>.</div>
+                <button id="collect">collect</button> <button id="deposit">deposit</button>`;
+    const coinsDiv = document.createElement("div");
+    popupDiv.appendChild(coinsDiv);
+    updateCoinsUI(cache.coins);
+
+    // collect button functionality
+    popupDiv
+      .querySelector<HTMLButtonElement>("#collect")!
+      .addEventListener("click", () => {
+        if (cache.coins.length === 0) {
+          return;
+        }
+        playerCoins.push(cache.coins.pop()!);
+        updatePlayerInventory();
+        updateCoinsUI(cache.coins);
+      });
+
+    // deposit button functionality
+    popupDiv.querySelector<HTMLButtonElement>("#deposit")!.addEventListener(
+      "click",
+      () => {
+        if (playerCoins.length === 0) {
+          return;
+        }
+        cache.coins.push(playerCoins.pop()!);
+        updatePlayerInventory();
+        updateCoinsUI(cache.coins);
+      },
+    );
+
+    return popupDiv;
+
+    function updateCoinsUI(coins: Coin[]) {
+      popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML = coins
+        .length.toString();
+      let out = "";
+      const printedCoins = coins.length > 5 ? 5 : coins.length;
+      for (let i = coins.length - 1; i > coins.length - printedCoins - 1; i--) {
+        out += coins[i].key;
+        out += "<br>";
+      }
+      coinsDiv.innerHTML = out;
+    }
+  });
 }
 
 interface Coin {
@@ -193,6 +194,7 @@ function generateSurroundingCaches() {
     // If location i,j is lucky enough, spawn a cache!
     if (luck([i, j].toString()) < CACHE_SPAWN_PROBABILITY) {
       // spawnCache({ i, j });
+
       const key = [i, j].toString();
       if (savedCaches.has(key)) {
         const newCache = new Cache({ i, j }); // add recycling of some kind
