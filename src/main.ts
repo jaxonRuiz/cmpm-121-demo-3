@@ -318,6 +318,7 @@ function moveMarker(direction: string) {
 }
 
 function saveState() {
+  saveActiveCaches();
   const state = {
     playerCoins,
     playerLocation: playerMarker.getLatLng(),
