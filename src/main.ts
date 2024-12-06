@@ -184,10 +184,7 @@ const activeCaches = new Map<string, Cache>();
 // populate neighborhood with caches
 function generateSurroundingCaches() {
   const surroundingCells = board.getCellsNearPoint(playerMarker.getLatLng());
-  activeCaches.forEach((cache) => {
-    const key = [cache.location.i, cache.location.j].toString();
-    savedCaches.set(key, cache.toMomento());
-  });
+  saveActiveCaches();
   activeCaches.clear();
   cacheLayer.clearLayers();
   surroundingCells.forEach(({ i, j }) => {
@@ -197,10 +194,12 @@ function generateSurroundingCaches() {
 
       const key = [i, j].toString();
       if (savedCaches.has(key)) {
+        console.log("from saved caches");
         const newCache = new Cache({ i, j }); // add recycling of some kind
         newCache.fromMomento(savedCaches.get(key)!);
         activeCaches.set(key, newCache);
       } else {
+        console.log("made new cache");
         const newCache = new Cache({ i, j });
         savedCaches.set(key, newCache.toMomento());
         activeCaches.set(key, newCache);
@@ -208,7 +207,13 @@ function generateSurroundingCaches() {
     }
   });
 }
-generateSurroundingCaches();
+
+function saveActiveCaches() {
+  activeCaches.forEach((cache) => {
+    const key = [cache.location.i, cache.location.j].toString();
+    savedCaches.set(key, cache.toMomento());
+  });
+}
 
 function updatePlayerInventory() {
   statusPanel.innerHTML = `${playerCoins.length} points accumulated`;
@@ -264,15 +269,19 @@ document.getElementById("sensor")!.addEventListener("click", () => {
 });
 
 function resetCommand() {
+  resetPlayer();
+  savedCaches.clear();
+  activeCaches.clear();
+  localStorage.removeItem("state");
+}
+
+function resetPlayer() {
   playerCoins.length = 0;
   updatePlayerInventory();
   playerMarker.setLatLng(OAKES_CLASSROOM);
-  savedCaches.clear();
-  activeCaches.clear();
   walkHistory.length = 0;
   notify("playerMoved");
   notify("dramaticMovement");
-  localStorage.removeItem("state");
 }
 
 function moveMarker(direction: string) {
@@ -331,12 +340,7 @@ function loadState() {
   polyline.setLatLngs(walkHistory);
   savedCaches.clear();
   state.savedCaches.forEach(([key, momento]: [string, string]) => {
-    const newCache = new Cache({
-      i: +key.split(",")[0],
-      j: +key.split(",")[1],
-    });
-    newCache.fromMomento(momento);
-    activeCaches.set(key, newCache);
+    savedCaches.set(key, momento);
   });
   notify("playerMoved");
   notify("dramaticMovement");
